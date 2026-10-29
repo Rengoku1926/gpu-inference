@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: gpu
+      POSTGRES_PASSWORD: gpu
+      POSTGRES_DB: gpu
+    ports:
+      - "5433:5432" # 5433 on the host so it doesn't clash with a Homebrew Postgres on 5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gpu -d gpu"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+volumes:
+  pgdata:
