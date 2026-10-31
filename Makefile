@@ -1,28 +1,37 @@
-DATABASE_URL ?= postgres://gpu:gpu@localhost:5433/gpu?sslmode=disable
-HTTP_ADDR ?= :8080
-export DATABASE_URL HTTP_ADDR
-
 COMPOSE := docker compose -f deploy/docker-compose.yml
 
-.PHONY: up down reset run build test psql
+.PHONY: up down reset migrate run dev build test lint psql redis-cli
 
-up:
+up: ## start postgres and redis
 	$(COMPOSE) up -d --wait
 
-down:
+down: ## stop them, keep data
 	$(COMPOSE) down
 
-reset:
+reset: ## stop them and delete all data
 	$(COMPOSE) down -v
+
+migrate: ## apply database migrations
+	go run ./cmd/migrate
 
 run:
 	go run ./cmd/server
 
+dev: ## hot reload with air
+	air
+
 build:
 	go build -o bin/server ./cmd/server
+	go build -o bin/migrate ./cmd/migrate
 
 test:
-	go test ./...
+	go test -race ./...
+
+lint:
+	go vet ./...
 
 psql:
-	psql "$(DATABASE_URL)"
+	psql "postgres://gpu:gpu@localhost:5433/gpu?sslmode=disable"
+
+redis-cli:
+	$(COMPOSE) exec redis redis-cli
